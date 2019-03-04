@@ -38,6 +38,9 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  char *fileptr;//creates a pointer to the file.
+  file_name = strtok_r((char *) file_name, " ", &fileptr); //separates string between spaces.
+  
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
@@ -53,6 +56,9 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
+
+  char *fileptr; //creates a pointer to the file.
+  file_name = strtok_r(file_name, " ", *fileptr); //tokenizes the string and separates between spaces.
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);

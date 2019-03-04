@@ -197,7 +197,10 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
+  
+  t->parent = thread_tid();
+  struct child_process *cp = add_child_process(t->tid);
+  t->cp = cp;
   /* Add to run queue. */
   thread_unblock (t);
 
