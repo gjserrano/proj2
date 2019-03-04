@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/init.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -19,80 +20,73 @@ syscall_handler (struct intr_frame *f UNUSED)
   thread_exit ();
 }
 
-static void
-syscall_halt(void)
+void syscall_halt(void)
+{
+	shutdown_power_off();
+}
+
+void syscall_exit(int status)
+{
+	struct thread *cur = thread_current();
+	if (thread_alive(cur->parent))
+	{
+		cur->cp->status = status;
+	}
+	printf("%s: exit(%d)\n", cur->name, status);
+	thread_exit();
+}
+
+pid_t syscall_exec(const char *cmd_line)
 {
 	return;
 }
 
-static void
-syscall_exit(int status)
+int syscall_halt(pid_t pid)
 {
 	return;
 }
 
-static pid_t
-syscall_exec(const char *cmd_line)
+bool syscall_create(const char *file, unsigned initial_size)
 {
 	return;
 }
 
-static int
-syscall_halt(pid_t pid)
+bool syscall_remove(const char *file)
 {
 	return;
 }
 
-static bool
-syscall_create(const char *file, unsigned initial_size)
+int syscall_open(const char *file)
 {
 	return;
 }
 
-static bool
-syscall_remove(const char *file)
+int syscall_filesize(int fd)
 {
 	return;
 }
 
-static int
-syscall_open(const char *file)
+int syscall_read(int fd, void *buffer, unsigned size)
 {
 	return;
 }
 
-static int
-syscall_filesize(int fd)
+int syscall_write(int fd, const void *buffer, unsigned size)
 {
 	return;
 }
 
-static int
-syscall_read(int fd, void *buffer, unsigned size)
+void syscall_seek(int fd, unsigned position)
 {
 	return;
 }
 
-static int
-syscall_write(int fd, const void *buffer, unsigned size)
+unsigned syscall_tell(int fd)
 {
 	return;
 }
 
-static void
-syscall_seek(int fd, unsigned position)
-{
-	return;
-}
-
-static unsigned
-syscall_tell(int fd)
-{
-	return;
-}
-
-static void
-syscall_close(int fd)
+void syscall_close(int fd)
 {
 	return;
 }
