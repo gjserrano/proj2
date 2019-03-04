@@ -97,6 +97,24 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+  
+  /*INSERTED CODE BEGINS HERE*/
+
+  /*Checks to see if the error defining int of the current thread indicates an
+  an error, then returns -1 showing the process has exited.*/
+  if(cur->exit_error=-100)
+        exit_proc(-1)
+
+  int exit_code = cur->exit_error; //Creates an int and initializes it to the error
+  printf("%s: exit(%d)\n", cur->name,exit_code); //Prints the thread name and exit code
+
+  /*Acquires the lock to edit the thread, then proceeds to close all files associated with the thread and release the lock.*/
+  aquire_filesys_lock();
+  file_close(thread_current()->self);
+  close_all_files(&thread_current()->files);
+  release_filesys_lock();
+
+  /* INSERTED CODE ENDS HERE */
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
