@@ -60,7 +60,7 @@ start_process (void *file_name_)
   bool success;
 
   char *file_ptr; //creates a pointer to the file.
-  file_name = strtok_r(file_name, " ", *file_ptr); //tokenizes the string and separates between spaces.
+  file_name = strtok_r(file_name, " ", &file_ptr); //tokenizes the string and separates between spaces.
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
