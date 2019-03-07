@@ -42,92 +42,92 @@ syscall_handler (struct intr_frame *f UNUSED)
 	check_valid_ptr((const void*)f->esp);
 	switch (*(int *)f->esp)
 	{
-	case SYS_HALT:
-	{
-		halt();
-		break;
-	}
-	case SYS_EXIT:
-	{
-		get_arg(f, &arg[0], 1);
-		exit(arg[0]);
-		break;
-	}
-	case SYS_EXEC:
-	{
-		get_arg(f, &arg[0], 1);
-		arg[0] = user_to_kernel_ptr((const void *)arg[0]);
-		f->eax = exec((const char *)arg[0]);
-		break;
-	}
-	case SYS_WAIT:
-	{
-		get_arg(f, &arg[0], 1);
-		f->eax = wait(arg[0]);
-		break;
-	}
-	case SYS_CREATE:
-	{
-		get_arg(f, &arg[0], 2);
-		arg[0] = user_to_kernel_ptr((const void *)arg[0]);
-		f->eax = create((const char *)arg[0], (unsigned)arg[1]);
-		break;
-	}
-	case SYS_REMOVE:
-	{
-		get_arg(f, &arg[0], 1);
-		arg[0] = user_to_kernel_ptr((const void *)arg[0]);
-		f->eax = remove((const char *)arg[0]);
-		break;
-	}
-	case SYS_OPEN:
-	{
-		get_arg(f, &arg[0], 1);
-		arg[0] = user_to_kernel_ptr((const void *)arg[0]);
-		f->eax = open((const char *)arg[0]);
-		break;
-	}
-	case SYS_FILESIZE:
-	{
-		get_arg(f, &arg[0], 1);
-		f->eax = filesize(arg[0]);
-		break;
-	}
-	case SYS_READ:
-	{
-		get_arg(f, &arg[0], 3);
-		check_valid_buffer((void *)arg[1], (unsigned)arg[2]);
-		arg[1] = user_to_kernel_ptr((const void *)arg[1]);
-		f->eax = read(arg[0], (void *)arg[1], (unsigned)arg[2]);
-		break;
-	}
-	case SYS_WRITE:
-	{
-		get_arg(f, &arg[0], 3);
-		check_valid_buffer((void *)arg[1], (unsigned)arg[2]);
-		arg[1] = user_to_kernel_ptr((const void *)arg[1]);
-		f->eax = write(arg[0], (const void *)arg[1],
-			(unsigned)arg[2]);
-		break;
-	}
-	case SYS_SEEK:
-	{
-		get_arg(f, &arg[0], 2);
-		seek(arg[0], (unsigned)arg[1]);
-		break;
-	}
-	case SYS_TELL:
-	{
-		get_arg(f, &arg[0], 1);
-		f->eax = tell(arg[0]);
-		break;
-	}
-	case SYS_CLOSE:
-	{
-		get_arg(f, &arg[0], 1);
-		close(arg[0]);
-		break;
-	}
+		case SYS_HALT:
+		{
+			syscall_halt();
+			break;
+		}
+		case SYS_EXIT:
+		{
+			get_arg(f, &arg[0], 1);
+			syscall_exit(arg[0]);
+			break;
+		}
+		case SYS_EXEC:
+		{
+			get_arg(f, &arg[0], 1);
+			arg[0] = user_to_kernel_ptr((const void *)arg[0]);
+			f->eax = syscall_exec((const char *)arg[0]);
+			break;
+		}
+		case SYS_WAIT:
+		{
+			get_arg(f, &arg[0], 1);
+			f->eax = syscall_wait(arg[0]);
+			break;
+		}
+		case SYS_CREATE:
+		{
+			get_arg(f, &arg[0], 2);
+			arg[0] = user_to_kernel_ptr((const void *)arg[0]);
+			f->eax = syscall_create((const char *)arg[0], (unsigned)arg[1]);
+			break;
+		}
+		case SYS_REMOVE:
+		{
+			get_arg(f, &arg[0], 1);
+			arg[0] = user_to_kernel_ptr((const void *)arg[0]);
+			f->eax = syscall_remove((const char *)arg[0]);
+			break;
+		}
+		case SYS_OPEN:
+		{
+			get_arg(f, &arg[0], 1);
+			arg[0] = user_to_kernel_ptr((const void *)arg[0]);
+			f->eax = syscall_open((const char *)arg[0]);
+			break;
+		}
+		case SYS_FILESIZE:
+		{
+			get_arg(f, &arg[0], 1);
+			f->eax = syscall_filesize(arg[0]);
+			break;
+		}
+		case SYS_READ:
+		{
+			get_arg(f, &arg[0], 3);
+			check_valid_buffer((void *)arg[1], (unsigned)arg[2]);
+			arg[1] = user_to_kernel_ptr((const void *)arg[1]);
+			f->eax = syscall_read(arg[0], (void *)arg[1], (unsigned)arg[2]);
+			break;
+		}
+		case SYS_WRITE:
+		{
+			get_arg(f, &arg[0], 3);
+			check_valid_buffer((void *)arg[1], (unsigned)arg[2]);
+			arg[1] = user_to_kernel_ptr((const void *)arg[1]);
+			f->eax = syscall_write(arg[0], (const void *)arg[1],
+				(unsigned)arg[2]);
+			break;
+		}
+		case SYS_SEEK:
+		{
+			get_arg(f, &arg[0], 2);
+			syscall_seek(arg[0], (unsigned)arg[1]);
+			break;
+		}
+		case SYS_TELL:
+		{
+			get_arg(f, &arg[0], 1);
+			f->eax = syscall_tell(arg[0]);
+			break;
+		}
+		case SYS_CLOSE:
+		{
+			get_arg(f, &arg[0], 1);
+			syscall_close(arg[0]);
+			break;
+		}
 	}
 }
 
@@ -373,7 +373,7 @@ void check_valid_ptr(const void *vaddr)
 {
 	if (!is_user_vaddr(vaddr) || vaddr < USER_VADDR_BOTTOM)
 	{
-		exit(ERROR);
+		syscall_exit(ERROR);
 	}
 }
 
@@ -416,7 +416,20 @@ int user_to_kernel_ptr(const void *vaddr)
 	void *ptr = pagedir_get_page(thread_current()->pagedir, vaddr);
 	if (!ptr)
 	{
-		exit(ERROR);
+		syscall_exit(ERROR);
 	}
 	return (int)ptr;
+}
+
+struct child_process* add_child_process(int pid)
+{
+	struct child_process* cp = malloc(sizeof(struct child_process));
+	cp->pid = pid;
+	cp->load = NOT_LOADED;
+	cp->wait = false;
+	cp->exit = false;
+	lock_init(&cp->wait_lock);
+	list_push_back(&thread_current()->child_list,
+		&cp->elem);
+	return cp;
 }
