@@ -1,9 +1,31 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
 #include <syscall-nr.h>
+#include <user/syscall.h>
+#include <usr/include/sys/types.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
+#include "threads/malloc.h"
+#include "threads/synch.h"
+#include "threads/vaddr.h"
+#include "devices/input.h"
+#include "devices/shutdown.h"
+#include "filesys/file.h"
+#include "filesys/filesys.h"
+#include "userprog/pagedir.h"
+#include "userprog/process.h"
+
+#define MAX_ARGS 4
+#define USER_VADDR_BOTTOM ((void *) 0x08048000)
+
+struct lock filesys_lock;
+
+struct process_file {
+	struct file *file;
+	int fd;
+	struct list_elem elem;
+};
 
 static void syscall_handler (struct intr_frame *);
 

@@ -592,7 +592,7 @@ bool thread_alive(int pid)
 	struct list_elem *e;
 	for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)) 
 	{
-		struct thread *t = list_entry(e, struct threat, allelem);
+		struct thread *t = list_entry(e, struct thread, allelem);
 		if (t->tid == pid)
 			return true;
 	}
