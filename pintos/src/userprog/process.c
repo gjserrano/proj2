@@ -59,15 +59,15 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  char *fileptr; //creates a pointer to the file.
-  file_name = strtok_r(file_name, " ", *fileptr); //tokenizes the string and separates between spaces.
+  char *file_ptr; //creates a pointer to the file.
+  file_name = strtok_r(file_name, " ", *file_ptr); //tokenizes the string and separates between spaces.
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (file_name, &if_.eip, &if_.esp, &file_ptr);
   if (success)
 	{
 		thread_current()->cp->load = LOAD_SUCCESS;
@@ -131,19 +131,14 @@ process_exit (void)
   uint32_t *pd;
   
 
-  /*Checks to see if the error defining int of the current thread indicates an
-  an error, then returns -1 showing the process has exited.*/
-  if(cur->exit_error=-100)
-        exit_proc(-1)
+  process_close_file(CLOSE_ALL);
 
-  int exit_code = cur->exit_error; //Creates an int and initializes it to the error
-  printf("%s: exit(%d)\n", cur->name,exit_code); //Prints the thread name and exit code
+  remove_child_processes();
 
-  /*Acquires the lock to edit the thread, then proceeds to close all files associated with the thread and release the lock.*/
-  aquire_filesys_lock();
-  file_close(thread_current()->self);
-  close_all_files(&thread_current()->files);
-  release_filesys_lock();
+  if (thread_alive(cur->parent))
+  {
+	cur->cp->exit = true;
+  }
 
 
   /* Destroy the current process's page directory and switch back
@@ -242,6 +237,10 @@ struct Elf32_Phdr
 #define PF_X 1          /* Executable. */
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
+
+
+#define WORD_SIZE 4 //both used for setting up stack. Called in setup_stack.
+#define DEFAULT_ARGV 2
 
 static bool setup_stack (void **esp, const char *file_name, char **file_ptr);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
