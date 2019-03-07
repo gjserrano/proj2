@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <syscall-nr.h>
 #include <user/syscall.h>
-#include <usr/include/sys/types.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/init.h"
