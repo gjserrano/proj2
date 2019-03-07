@@ -38,14 +38,14 @@ void syscall_close(int fd);
 //extra functions
 struct child_process* get_child_process(int pid);
 //int process_add_file(struct file *f);
-struct file* process_get_file(int fd);
+//struct file* process_get_file(int fd);
 void process_close_file(int fd);
 //void get_arg(struct intr_frame *f, int *arg, int n);
-void check_valid_ptr(const void *vaddr);
-void check_valid_buffer(void* buffer, unsigned size);
+//void check_valid_ptr(const void *vaddr);
+//void check_valid_buffer(void* buffer, unsigned size);
 void remove_child_process(struct child_process *cp);
 void remove_child_processes(void);
-int user_to_kernel_ptr(const void *vaddr);
+//int user_to_kernel_ptr(const void *vaddr);
 struct child_process* add_child_process(int pid);
 
 

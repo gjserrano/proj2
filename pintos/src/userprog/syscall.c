@@ -26,7 +26,14 @@ struct process_file {
 	struct list_elem elem;
 };
 
+int process_add_file(struct file *f);
+struct file* process_get_file(int fd);
+
 static void syscall_handler (struct intr_frame *);
+int user_to_kernel_ptr(const void *vaddr);
+void get_arg(struct intr_frame *f, int *arg, int n);
+void check_valid_ptr(const void *vaddr);
+void check_valid_buffer(void* buffer, unsigned size);
 
 void
 syscall_init (void) 
