@@ -495,15 +495,12 @@ setup_stack (void **esp, const char *file_name, char** file_ptr)
 	char *token;
   char **argv = malloc(DEFAULT_ARGV*sizeof(char *));
   int i, argc = 0, argv_size = DEFAULT_ARGV;
-
-  // Push args onto stack
-  for (token = (char *) file_name; token != NULL;
+  for (token = (char *) file_name; token != NULL;   // this pushes the args in the stack
        token = strtok_r (NULL, " ", file_ptr))
     {
       *esp -= strlen(token) + 1;
       argv[argc] = *esp;
       argc++;
-      // Resize argv
       if (argc >= argv_size)
 	{
 	  argv_size *= 2;
@@ -512,34 +509,27 @@ setup_stack (void **esp, const char *file_name, char** file_ptr)
       memcpy(*esp, token, strlen(token) + 1);
     }
   argv[argc] = 0;
-  // Align to word size (4 bytes)
-  i = (size_t) *esp % WORD_SIZE;
+  i = (size_t) *esp % WORD_SIZE; //this utilizes the 4kB words said in proj2.pdf
   if (i)
     {
       *esp -= i;
       memcpy(*esp, &argv[argc], i);
     }
-  // Push argv[i] for all i
-  for (i = argc; i >= 0; i--)
+  for (i = argc; i >= 0; i--)   // this pushes argv[i] for all of i
     {
       *esp -= sizeof(char *);
       memcpy(*esp, &argv[i], sizeof(char *));
     }
-  // Push argv
+  // This pushes argv, then argc, then a fake return addr, then frees the argv, into memory for us.
   token = *esp;
   *esp -= sizeof(char **);
   memcpy(*esp, &token, sizeof(char **));
-  // Push argc
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
-  // Push fake return addr
   *esp -= sizeof(void *);
   memcpy(*esp, &argv[argc], sizeof(void *));
-  // Free argv
   free(argv);
-
   return success;
-
 
 }
 
