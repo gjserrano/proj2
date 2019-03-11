@@ -56,7 +56,7 @@ The strtok_r is reentrant which can call from multiple threads simultaneously wi
 >> and arguments.  In Unix-like systems, the shell does this
 >> separation.  Identify at least two advantages of the Unix approach.
 
-Thre tie inside the kernel can be shortened, and it does advanced pre-processing once it separates the commands.
+The time inside the kernel can be shortened, and it does advanced pre-processing once it separates the commands.
 
 			     SYSTEM CALLS
 			     ============
@@ -67,14 +67,77 @@ Thre tie inside the kernel can be shortened, and it does advanced pre-processing
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+struct lock filesys_lock;
+//Holds the filesys lock
+
+struct child_process 
+{
+
+	int pid;
+
+	int load;
+
+	bool wait;
+
+	bool exit;
+
+	int status;
+
+	struct lock wait_lock;
+	struct list_elem elem;
+
+};
+//This struct examines the activity of a child process
+
+struct process_file 
+{
+	struct file *file;
+
+	int fd;
+
+	struct list_elem elem;
+
+};
+//This contains information on a current threads for filesys call
+
+struct thread
+{
+	// Needed for file system sys calls
+
+	struct list file_list;
+
+    	int fd;
+
+
+
+	// Needed for wait / exec sys calls
+	struct list child_list;
+	tid_t parent;
+
+	// Points to child_process struct in parent's child list
+	struct child_process* cp;
+}
+
 >> B2: Describe how file descriptors are associated with open files.
 >> Are file descriptors unique within the entire OS or just within a
 >> single process?
+
+File descriptors are mapped with a one-to-one to each file open through syscall.
+File descriptors are unique within the entire OS.
 
 ---- ALGORITHMS ----
 
 >> B3: Describe your code for reading and writing user data from the
 >> kernel.
+
+Read:
+First, check to see if the buffer are valid pointers, if not exit. Then, acquire
+the filesys_lock. After current thread become lock holder, check if fd is STDIN_FILENO.
+If so, it reads. Then, the thread releases the lock.
+Write:
+First, check to see if the buffer are valid pointers, if not exit. Then, acquire
+the filesys_lock. After current thread become lock holder, check if fd is STDOUT_FILENO.
+If so, it writes. Then, the thread releases the lock.
 
 >> B4: Suppose a system call causes a full page (4,096 bytes) of data
 >> to be copied from user space into the kernel.  What is the least
@@ -83,8 +146,36 @@ Thre tie inside the kernel can be shortened, and it does advanced pre-processing
 >> for a system call that only copies 2 bytes of data?  Is there room
 >> for improvement in these numbers, and how much?
 
+Full page:
+least = 1
+greatest = 4096 (if not contiguous, otherwise 2)
+
+2 bytes:
+least = 1
+greatest = 2 (if not contiguous)
+
+We don't see much improvement from these numbers.
+
 >> B5: Briefly describe your implementation of the "wait" system call
 >> and how it interacts with process termination.
+
+Implemented form process_wait
+
+We define a new struct child_status to represent child’s exit status. And a list
+of child_process is added into parent’s thread struct, representing all children
+the parent owns. We also introduce a pid inside child’s struct, to ensure
+child can find parent and set it’s status if parent still exists. 
+
+If child calls exit-syscall to exit, a boolean signal that indicate exit-syscall
+is called and the child’s exit status will be set into the corresponding
+child_process struct in parent’s children list. 
+If child is terminated by kernel, the boolean signal mentioned above is remain
+as false, which will be seen by parent, and understood child is terminated by
+kernel.
+
+If parent terminates early, the list and all the structs in it will be free,
+then the child will find out the parent already exited and give up setting the
+status, continue to execute. 
 
 >> B6: Any access to user program memory at a user-specified address
 >> can fail due to a bad pointer value.  Such accesses must cause the
@@ -100,12 +191,28 @@ Thre tie inside the kernel can be shortened, and it does advanced pre-processing
 >> paragraphs, describe the strategy or strategies you adopted for
 >> managing these issues.  Give an example.
 
+Avioding bad user memory access is done by checking before vaildating. 
+Taking “write” system call as an example, the esp
+pointer and the three arguments pointer will be checked first, if anything is
+invalid, terminate the process. Then after enter into write function, the buffer
+beginning pointer and the buffer ending pointer(buffer + size - 1) will be
+checked before being used. 
+
+When errors still happen, we use a page_fault exception. If the pointer is not valid
+we terminate the process. When using bad-jump-test2 we must terminate the process after
+throwing a page fault expection.
+
 ---- SYNCHRONIZATION ----
 
 >> B7: The "exec" system call returns -1 if loading the new executable
 >> fails, so it cannot return before the new executable has completed
 >> loading.  How does your code ensure this?  How is the load
 >> success/failure status passed back to the thread that calls "exec"?
+
+We save the child_process's in the parent's process. We do this because
+the child can exit anytime, so there is no way to check the status
+of a child process if the child terminates. But if a parent keeps it in
+a list, then the parent can check it even if the child terminates.
 
 >> B8: Consider parent process P with child process C.  How do you
 >> ensure proper synchronization and avoid race conditions when P
@@ -114,16 +221,51 @@ Thre tie inside the kernel can be shortened, and it does advanced pre-processing
 >> terminates without waiting, before C exits?  After C exits?  Are
 >> there any special cases?
 
+We use child_process to represent each child process the parent has.
+Then we use the load to prevent race condictions
+
+P calls wait(C) before C exits
+P will acquire see what load status for the child and wait until its loaded.
+Then, parent retrieves the child’s exit status. 
+
+P calls wait(C) after C exits
+P will acquire the child load and found out C is loaded and check it’s exit
+status directly.
+
+P terminates without waiting before C exits
+The list inside P will be free, the lock will be released, since no one will
+wait a signal except parent, condition don’t need to be signaled. When C tries
+to set it’s status and find out parent has exited, it will ignore it and
+continue to execute.
+
+P terminates after C exits
+The same thing happen to P, which is free all the resources P has. 
+
+
 ---- RATIONALE ----
 
 >> B9: Why did you choose to implement access to user memory from the
 >> kernel in the way that you did?
 
+It was the approach that made the most sense to us.
+
 >> B10: What advantages or disadvantages can you see to your design
 >> for file descriptors?
 
+Advantages:
+1) Thread-struct’s space is minimized
+2) Kernel is aware of all the open files, which gains more flexibility to 
+   manipulate the opened files.
+
+Disadvantages:
+1) Consumes kernel space, user program may open lots of files to crash the
+   kernel.
+2) The inherits of open files opened by a parent require extra effort to be
+   implement.
+
 >> B11: The default tid_t to pid_t mapping is the identity mapping.
 >> If you changed it, what advantages are there to your approach?
+We didn't change it.
 
 			   SURVEY QUESTIONS
 			   ================
