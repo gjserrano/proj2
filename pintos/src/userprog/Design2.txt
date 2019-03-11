@@ -23,6 +23,11 @@ n/a
 >> preparing your submission, other than the Pintos documentation, course
 >> text, lecture notes, and course staff.
 
+GitHub urls used for inspiration:
+urcAlliance - https://github.com/ucrAlliance/Pintos-Project-2
+ryantimwilson - https://github.com/ryantimwilson/Pintos-Project-2
+codyjack - https://github.com/codyjack/OS-pintos
+
 
 
 			   ARGUMENT PASSING
